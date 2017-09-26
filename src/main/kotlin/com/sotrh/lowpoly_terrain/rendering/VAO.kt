@@ -21,6 +21,12 @@ class VAO(val id: Int, val mode: Int, val vbo: Int, val vertexCount: Int, val eb
         GL30.glBindVertexArray(id)
     }
 
+    inline fun doBinded(block: (VAO)->Unit) {
+        bind()
+        block(this)
+        unbind()
+    }
+
     fun delete() {
         assertProperState()
 
