@@ -77,7 +77,7 @@ class TerrainModel(val terrain: Terrain) {
         GL30.glBindVertexArray(0)
     }
 
-    fun delete() {
+    fun destroy() {
         GL20.glDisableVertexAttribArray(0)
 
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0)

@@ -3,35 +3,29 @@ package com.sotrh.lowpoly_terrain
 import com.sotrh.lowpoly_terrain.camera.Camera
 import com.sotrh.lowpoly_terrain.common.DEFAULT_FRAGMENT_SHADER
 import com.sotrh.lowpoly_terrain.common.DEFAULT_VERTEX_SHADER
-import com.sotrh.lowpoly_terrain.common.lNULL
+import com.sotrh.lowpoly_terrain.common.Window
 import com.sotrh.lowpoly_terrain.terrain.Terrain
 import com.sotrh.lowpoly_terrain.terrain.TerrainModel
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import org.lwjgl.glfw.Callbacks
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
-import org.lwjgl.system.MemoryStack
 
 object LowPolyTerrainDemo {
-    private var window = lNULL
-
-    var windowWidth = 0; private set
-    var windowHeight = 0; private set
 
     lateinit var terrain: Terrain
     lateinit var terrainModel: TerrainModel
 
+    lateinit var window: Window
     lateinit var camera: Camera
 
     fun getTime() = GLFW.glfwGetTime()
 
     fun quit() {
-        GLFW.glfwSetWindowShouldClose(window, true)
     }
 
     fun run() {
@@ -50,49 +44,7 @@ object LowPolyTerrainDemo {
 
         if (!GLFW.glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
 
-        GLFW.glfwDefaultWindowHints()
-        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE)
-        GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_TRUE)
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3)
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2)
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE)
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE)
-
-        window = GLFW.glfwCreateWindow(800, 600, "Hello GLFW!", lNULL, lNULL)
-        if (window == lNULL) throw RuntimeException("Failed to create the GLFW window")
-
-        GLFW.glfwSetKeyCallback(window) { _, key, scancode, action, mods ->
-            if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE)
-                quit()
-            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
-                camera.movePosition(0f, 0f, 1f)
-//            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
-//            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
-//            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
-        }
-
-        GLFW.glfwSetFramebufferSizeCallback(window) { _, width, height ->
-            windowWidth = width
-            windowHeight = height
-        }
-
-        // get the thread stack and push a new frame
-        MemoryStack.stackPush().use { stack ->
-            val pWidth = stack.mallocInt(1)
-            val pHeight = stack.mallocInt(1)
-
-            GLFW.glfwGetWindowSize(window, pWidth, pHeight)
-
-            val vidMode = GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor())
-
-            val xPos = (vidMode.width() - pWidth.get(0)) / 2
-            val yPos = (vidMode.height() - pHeight.get(0)) / 2
-            GLFW.glfwSetWindowPos(window, xPos, yPos)
-        }
-
-        GLFW.glfwMakeContextCurrent(window)
-        GLFW.glfwSwapInterval(1)
-        GLFW.glfwShowWindow(window)
+        window = Window(Window.Hints("Low Poly Terrain", 800, 600))
 
         GL.createCapabilities()
     }
@@ -168,7 +120,7 @@ object LowPolyTerrainDemo {
         var previous = getTime()
         var steps = 0.0
 
-        while (!GLFW.glfwWindowShouldClose(window)) {
+        while (!window.shouldClose) {
             val loopStartTime = getTime()
             val elapsed = loopStartTime - previous
             previous = loopStartTime
@@ -181,8 +133,8 @@ object LowPolyTerrainDemo {
 
             render()
 
-            GLFW.glfwSwapBuffers(window)
-            GLFW.glfwPollEvents()
+            window.swapBuffers()
+            window.pollEvents()
         }
     }
 
@@ -197,10 +149,8 @@ object LowPolyTerrainDemo {
     }
 
     private fun destroy() {
-        terrainModel.delete()
-
-        Callbacks.glfwFreeCallbacks(window)
-        GLFW.glfwDestroyWindow(window)
+        terrainModel.destroy()
+        window.destroy()
     }
 
     @JvmStatic
