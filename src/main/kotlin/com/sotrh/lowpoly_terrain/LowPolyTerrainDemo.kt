@@ -1,15 +1,20 @@
 package com.sotrh.lowpoly_terrain
 
+import com.sotrh.lowpoly_terrain.camera.Camera
 import com.sotrh.lowpoly_terrain.common.DEFAULT_FRAGMENT_SHADER
 import com.sotrh.lowpoly_terrain.common.DEFAULT_VERTEX_SHADER
 import com.sotrh.lowpoly_terrain.common.lNULL
-import com.sotrh.lowpoly_terrain.common.use
-import com.sotrh.lowpoly_terrain.rendering.VAO
+import com.sotrh.lowpoly_terrain.terrain.Terrain
+import com.sotrh.lowpoly_terrain.terrain.TerrainModel
 import org.joml.Matrix4f
+import org.joml.Vector3f
 import org.lwjgl.glfw.Callbacks
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWErrorCallback
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11
+import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import org.lwjgl.system.MemoryStack
 
 object LowPolyTerrainDemo {
@@ -18,6 +23,11 @@ object LowPolyTerrainDemo {
     var windowWidth = 0; private set
     var windowHeight = 0; private set
 
+    lateinit var terrain: Terrain
+    lateinit var terrainModel: TerrainModel
+
+    lateinit var camera: Camera
+
     fun getTime() = GLFW.glfwGetTime()
 
     fun quit() {
@@ -25,12 +35,17 @@ object LowPolyTerrainDemo {
     }
 
     fun run() {
+        setup()
         create()
         loop()
         destroy()
     }
 
     private fun create() {
+
+    }
+
+    private fun setup() {
         GLFWErrorCallback.createPrint(System.err).set()
 
         if (!GLFW.glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
@@ -49,6 +64,11 @@ object LowPolyTerrainDemo {
         GLFW.glfwSetKeyCallback(window) { _, key, scancode, action, mods ->
             if (key == GLFW.GLFW_KEY_ESCAPE && action == GLFW.GLFW_RELEASE)
                 quit()
+            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
+                camera.movePosition(0f, 0f, 1f)
+//            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
+//            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
+//            else if (key == GLFW.GLFW_KEY_W && action == GLFW.GLFW_PRESS)
         }
 
         GLFW.glfwSetFramebufferSizeCallback(window) { _, width, height ->
@@ -57,7 +77,7 @@ object LowPolyTerrainDemo {
         }
 
         // get the thread stack and push a new frame
-        MemoryStack.stackPush().also { stack ->
+        MemoryStack.stackPush().use { stack ->
             val pWidth = stack.mallocInt(1)
             val pHeight = stack.mallocInt(1)
 
@@ -68,31 +88,28 @@ object LowPolyTerrainDemo {
             val xPos = (vidMode.width() - pWidth.get(0)) / 2
             val yPos = (vidMode.height() - pHeight.get(0)) / 2
             GLFW.glfwSetWindowPos(window, xPos, yPos)
-
-        }.pop()
+        }
 
         GLFW.glfwMakeContextCurrent(window)
         GLFW.glfwSwapInterval(1)
         GLFW.glfwShowWindow(window)
+
+        GL.createCapabilities()
     }
 
-    private lateinit var vao: VAO
-
     private fun loop() {
-        GL.createCapabilities()
 
         GL11.glClearColor(0.4f, 0.4f, 0.5f, 1.0f)
 
-        vao = VAO.Builder()
-                .triangles()
-                .vertices(3, 6, true) { vertices ->
-                    vertices.put(-0.6f).put(-0.4f).put(0f).put(1f).put(0f).put(0f)
-                    vertices.put(0.6f).put(-0.4f).put(0f).put(0f).put(1f).put(0f)
-                    vertices.put(0.0f).put(0.6f).put(0f).put(0f).put(0f).put(1f)
-                    vertices.flip()
-                }
-                .build()
-        vao.bind()
+        // create the camera
+        camera = Camera(position = Vector3f(0f, 3f, 0f), rotation = Vector3f(45f, 45f, 0f))
+
+        // create the terrain
+        terrain = Terrain.Builder.random(100)
+        terrainModel = TerrainModel(terrain)
+
+        // bind the terrain vao
+        GL30.glBindVertexArray(terrainModel.vao)
 
         // create the shader
         val vertexShader = GL20.glCreateShader(GL20.GL_VERTEX_SHADER)
@@ -131,30 +148,29 @@ object LowPolyTerrainDemo {
         GL20.glVertexAttribPointer(colAttrib, 3, GL11.GL_FLOAT, false, 6 * floatSize, 3L * floatSize)
 
         val buffer = FloatArray(16)
-
         val uniModel = GL20.glGetUniformLocation(shaderProgram, "model")
         val model = Matrix4f()
         GL20.glUniformMatrix4fv(uniModel, false, model.get(buffer))
 
         val uniView = GL20.glGetUniformLocation(shaderProgram, "view")
-        val view = Matrix4f()
+        val view = camera.getViewMatrix()
         GL20.glUniformMatrix4fv(uniView, false, view.get(buffer))
 
         val uniProjection = GL20.glGetUniformLocation(shaderProgram, "projection")
         val ratio = 800f / 600f // shouldn't be hard coded
-        println("ratio = $ratio, windowWidth = $windowWidth, windowHeight = $windowHeight")
-        val projection = Matrix4f().ortho(-ratio, ratio, -1f, 1f, -1f, 1f)
+        val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
         GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
 
-        vao.unbind()
+        // unbind the vao
+        GL30.glBindVertexArray(0)
 
-        var secsPerUpdate = 1.0 / 60.0
+        val secsPerUpdate = 1.0 / 60.0
         var previous = getTime()
         var steps = 0.0
 
         while (!GLFW.glfwWindowShouldClose(window)) {
-            var loopStartTime = getTime()
-            var elapsed = loopStartTime - previous
+            val loopStartTime = getTime()
+            val elapsed = loopStartTime - previous
             previous = loopStartTime
             steps += elapsed
 
@@ -175,14 +191,14 @@ object LowPolyTerrainDemo {
     }
 
     private fun render() {
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT)
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
 
-        vao.bind()
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 3)
-        vao.unbind()
+        terrainModel.draw()
     }
 
     private fun destroy() {
+        terrainModel.delete()
+
         Callbacks.glfwFreeCallbacks(window)
         GLFW.glfwDestroyWindow(window)
     }
