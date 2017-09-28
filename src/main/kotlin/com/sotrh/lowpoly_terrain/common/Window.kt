@@ -2,6 +2,8 @@ package com.sotrh.lowpoly_terrain.common
 
 import org.lwjgl.glfw.Callbacks
 import org.lwjgl.glfw.GLFW
+import org.lwjgl.opengl.GL
+import org.lwjgl.opengl.GL11
 import org.lwjgl.system.MemoryStack
 
 class Window(hints: Hints) {
@@ -46,6 +48,7 @@ class Window(hints: Hints) {
         GLFW.glfwSetFramebufferSizeCallback(id) { _, width, height ->
             this.width = width
             this.height = height
+            GL11.glViewport(0, 0, width, height)
             sizeChangeListeners.forEach {
                 it(this)
             }
@@ -54,6 +57,8 @@ class Window(hints: Hints) {
         makeContextCurrent()
         GLFW.glfwSwapInterval(1)
         GLFW.glfwShowWindow(id)
+
+        GL.createCapabilities()
     }
 
     fun centerInMonitor() {
