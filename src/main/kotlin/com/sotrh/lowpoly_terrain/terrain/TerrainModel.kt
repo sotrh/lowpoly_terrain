@@ -1,6 +1,6 @@
 package com.sotrh.lowpoly_terrain.terrain
 
-import com.sotrh.lowpoly_terrain.common.VAO
+import com.sotrh.lowpoly_terrain.common.*
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL15
 import org.lwjgl.opengl.GL20
@@ -11,20 +11,9 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.nio.ShortBuffer
 
-class TerrainModel(val terrain: Terrain) {
-
-    companion object {
-        val FLOATS_PER_VERTEX = 6
-    }
-
-    val vao: VAO
-
-    init {
-        fun elementFor(x: Int, z: Int): Int {
-            return (x * terrain.size + z)
-        }
-
-        vao = VAO.Builder()
+class TerrainModel(private val terrain: Terrain) : Model(
+        Shader(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER),
+        VAO.Builder()
                 .triangleStrip()
                 .vertices(terrain.size * terrain.size, FLOATS_PER_VERTEX, true) { buffer, vertexCount ->
                     (0 until terrain.size).forEach { x ->
@@ -36,6 +25,10 @@ class TerrainModel(val terrain: Terrain) {
                     buffer.flip()
                 }
                 .elements((terrain.size - 1) * (terrain.size) * 2 + (terrain.size - 2) * 2, true) { buffer, elementCount ->
+                    fun elementFor(x: Int, z: Int): Int {
+                        return (x * terrain.size + z)
+                    }
+
                     (0 until terrain.size - 1).forEach { x ->
                         (0 until terrain.size).forEach { z ->
                             buffer.put(elementFor(x, z))
@@ -50,12 +43,10 @@ class TerrainModel(val terrain: Terrain) {
                     buffer.flip()
                 }
                 .build()
-    }
+) {
 
-    fun draw() {
-        vao.bind()
-        vao.draw()
-        vao.unbind()
+    companion object {
+        val FLOATS_PER_VERTEX = 6
     }
 
     fun destroy() {
