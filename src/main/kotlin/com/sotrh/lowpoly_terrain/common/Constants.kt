@@ -35,3 +35,5 @@ val DEFAULT_FRAGMENT_SHADER =
                 fragColor = vec4(vertexColor, 1.0);
             }
         """
+
+val MATRIX_BUFFER = FloatArray(16)

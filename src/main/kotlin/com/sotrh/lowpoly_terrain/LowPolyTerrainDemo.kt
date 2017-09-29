@@ -1,10 +1,7 @@
 package com.sotrh.lowpoly_terrain
 
 import com.sotrh.lowpoly_terrain.camera.Camera
-import com.sotrh.lowpoly_terrain.common.DEFAULT_FRAGMENT_SHADER
-import com.sotrh.lowpoly_terrain.common.DEFAULT_VERTEX_SHADER
-import com.sotrh.lowpoly_terrain.common.Shader
-import com.sotrh.lowpoly_terrain.common.Window
+import com.sotrh.lowpoly_terrain.common.*
 import com.sotrh.lowpoly_terrain.terrain.Terrain
 import com.sotrh.lowpoly_terrain.terrain.TerrainModel
 import org.joml.Matrix4f
@@ -49,12 +46,10 @@ object LowPolyTerrainDemo {
 
         window.addWindowSizeChangedListener {
             terrainModel.shader.bind()
-            val buffer = FloatArray(16)
-            val uniProjection = GL20.glGetUniformLocation(terrainModel.shader.id, "projection")
             val ratio = window.width.toFloat() / window.height
             val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
-            GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
-                    terrainModel.shader.unbind()
+            terrainModel.shader.putUniform("projection", projection)
+            terrainModel.shader.unbind()
         }
 
         GL.createCapabilities()
@@ -65,7 +60,7 @@ object LowPolyTerrainDemo {
         GL11.glClearColor(0.4f, 0.4f, 0.5f, 1.0f)
         GL11.glCullFace(GL11.GL_BACK)
 
-        // bind the terrain vao
+        // bind the terrainModel
         terrainModel.vao.bind()
         terrainModel.shader.bind()
 
@@ -79,19 +74,15 @@ object LowPolyTerrainDemo {
         GL20.glEnableVertexAttribArray(colAttrib)
         GL20.glVertexAttribPointer(colAttrib, 3, GL11.GL_FLOAT, false, 6 * floatSize, 3L * floatSize)
 
-        val buffer = FloatArray(16)
-        val uniModel = GL20.glGetUniformLocation(terrainModel.shader.id, "model")
         val model = Matrix4f()
-        GL20.glUniformMatrix4fv(uniModel, false, model.get(buffer))
+        terrainModel.shader.putUniform("model", model)
 
-        val uniView = GL20.glGetUniformLocation(terrainModel.shader.id, "view")
         val view = camera.getViewMatrix()
-        GL20.glUniformMatrix4fv(uniView, false, view.get(buffer))
+        terrainModel.shader.putUniform("view", view)
 
-        val uniProjection = GL20.glGetUniformLocation(terrainModel.shader.id, "projection")
         val ratio = window.width.toFloat() / window.height
         val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
-        GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
+        terrainModel.shader.putUniform("projection", projection)
 
         terrainModel.shader.unbind()
         terrainModel.vao.unbind()
