@@ -70,7 +70,7 @@ object LowPolyTerrainDemo {
         GL11.glCullFace(GL11.GL_BACK)
 
         // bind the terrain vao
-        GL30.glBindVertexArray(terrainModel.vao)
+        terrainModel.vao.bind()
 
         shader.bind()
 
@@ -98,9 +98,8 @@ object LowPolyTerrainDemo {
         val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
         GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
 
-        // unbind the vao
         shader.unbind()
-        GL30.glBindVertexArray(0)
+        terrainModel.vao.unbind()
 
         val secsPerUpdate = 1.0 / 60.0
         var previous = getTime()
