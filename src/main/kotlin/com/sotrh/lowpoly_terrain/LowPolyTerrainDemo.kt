@@ -27,9 +27,6 @@ object LowPolyTerrainDemo {
 
     fun getTime() = GLFW.glfwGetTime()
 
-    fun quit() {
-    }
-
     fun run() {
         setup()
         loop()
@@ -43,23 +40,22 @@ object LowPolyTerrainDemo {
 
         window = Window(Window.Hints("Low Poly Terrain", 800, 600))
 
-        shader = Shader(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER)
-        window.addWindowSizeChangedListener {
-            shader.bind()
-            val buffer = FloatArray(16)
-            val uniProjection = GL20.glGetUniformLocation(shader.id, "projection")
-            val ratio = window.width.toFloat() / window.height
-            val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
-            GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
-            shader.unbind()
-        }
-
         // create the camera
         camera = Camera(position = Vector3f(0f, 3f, 0f), rotation = Vector3f(45f, 45f, 0f))
 
         // create the terrain
         terrain = Terrain.Builder.random(100)
         terrainModel = TerrainModel(terrain)
+
+        window.addWindowSizeChangedListener {
+            terrainModel.shader.bind()
+            val buffer = FloatArray(16)
+            val uniProjection = GL20.glGetUniformLocation(terrainModel.shader.id, "projection")
+            val ratio = window.width.toFloat() / window.height
+            val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
+            GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
+                    terrainModel.shader.unbind()
+        }
 
         GL.createCapabilities()
     }
@@ -71,34 +67,33 @@ object LowPolyTerrainDemo {
 
         // bind the terrain vao
         terrainModel.vao.bind()
-
-        shader.bind()
+        terrainModel.shader.bind()
 
         val floatSize = 4
 
-        val posAttrib = GL20.glGetAttribLocation(shader.id, "position")
+        val posAttrib = GL20.glGetAttribLocation(terrainModel.shader.id, "position")
         GL20.glEnableVertexAttribArray(posAttrib)
         GL20.glVertexAttribPointer(posAttrib, 3, GL11.GL_FLOAT, false, 6 * floatSize, 0L)
 
-        val colAttrib = GL20.glGetAttribLocation(shader.id, "color")
+        val colAttrib = GL20.glGetAttribLocation(terrainModel.shader.id, "color")
         GL20.glEnableVertexAttribArray(colAttrib)
         GL20.glVertexAttribPointer(colAttrib, 3, GL11.GL_FLOAT, false, 6 * floatSize, 3L * floatSize)
 
         val buffer = FloatArray(16)
-        val uniModel = GL20.glGetUniformLocation(shader.id, "model")
+        val uniModel = GL20.glGetUniformLocation(terrainModel.shader.id, "model")
         val model = Matrix4f()
         GL20.glUniformMatrix4fv(uniModel, false, model.get(buffer))
 
-        val uniView = GL20.glGetUniformLocation(shader.id, "view")
+        val uniView = GL20.glGetUniformLocation(terrainModel.shader.id, "view")
         val view = camera.getViewMatrix()
         GL20.glUniformMatrix4fv(uniView, false, view.get(buffer))
 
-        val uniProjection = GL20.glGetUniformLocation(shader.id, "projection")
+        val uniProjection = GL20.glGetUniformLocation(terrainModel.shader.id, "projection")
         val ratio = window.width.toFloat() / window.height
         val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
         GL20.glUniformMatrix4fv(uniProjection, false, projection.get(buffer))
 
-        shader.unbind()
+        terrainModel.shader.unbind()
         terrainModel.vao.unbind()
 
         val secsPerUpdate = 1.0 / 60.0
@@ -130,9 +125,7 @@ object LowPolyTerrainDemo {
     private fun render() {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
 
-        shader.bind()
         terrainModel.draw()
-        shader.unbind()
     }
 
     private fun destroy() {
