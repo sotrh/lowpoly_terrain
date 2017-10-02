@@ -19,7 +19,7 @@ class TerrainModel(private val terrain: Terrain) : Model(
                     (0 until terrain.size).forEach { x ->
                         (0 until terrain.size).forEach { z ->
                             buffer.put(x - terrain.size * 0.5f - 0.5f).put(terrain.heightMap[x][z]).put(z - terrain.size * 0.5f - 0.5f) // position
-                            buffer.put(0.5f).put(terrain.heightMap[x][z]).put(0.5f) // color
+                            buffer.put(0.5f).put(1-terrain.heightMap[x][z]).put(0.5f) // color
                         }
                     }
                     buffer.flip()
