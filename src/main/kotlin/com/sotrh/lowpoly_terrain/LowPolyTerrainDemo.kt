@@ -20,7 +20,6 @@ object LowPolyTerrainDemo {
 
     lateinit var window: Window
     lateinit var camera: Camera
-    lateinit var shader: Shader
 
     fun getTime() = GLFW.glfwGetTime()
 
@@ -105,12 +104,14 @@ object LowPolyTerrainDemo {
             render()
 
             window.swapBuffers()
-            window.pollEvents()
+            window.input.processInput()
         }
     }
 
     private fun update() {
-
+        if (window.input.keyboard.isKeyJustPressed(GLFW.GLFW_KEY_ESCAPE)) {
+            GLFW.glfwSetWindowShouldClose(window.id, true)
+        }
     }
 
     private fun render() {

@@ -6,6 +6,13 @@ import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.system.MemoryStack
 
+typealias SizeChangeListener = (window: Window) -> Unit
+typealias KeyEventListener = (window: Window, key: Int, scancode: Int, action: Int, mods: Int) -> Unit
+typealias MouseButtonListener = (window: Window, button: Int, action: Int, mods: Int) -> Unit
+typealias CursorEnteredListener = (window: Window, entered: Boolean) -> Unit
+typealias CursorPosListener = (window: Window, xpos: Double, ypos: Double) -> Unit
+typealias ScrollListener = (window: Window, xoffset: Double, yoffset: Double) -> Unit
+
 class Window(hints: Hints) {
 
     var id: Long; private set
@@ -15,7 +22,14 @@ class Window(hints: Hints) {
 
     val shouldClose: Boolean; get() = GLFW.glfwWindowShouldClose(id)
 
-    private val sizeChangeListeners = arrayListOf<(window: Window) -> Unit>()
+    private val sizeChangeListeners = arrayListOf<SizeChangeListener>()
+    private val keyEventListeners = arrayListOf<KeyEventListener>()
+    private val mouseButtonListeners = arrayListOf<MouseButtonListener>()
+    private val cursorEnteredListeners = arrayListOf<CursorEnteredListener>()
+    private val cursorPosListeners = arrayListOf<CursorPosListener>()
+    private val scrollListeners = arrayListOf<ScrollListener>()
+
+    val input: Input
 
     init {
         GLFW.glfwDefaultWindowHints()
@@ -49,10 +63,30 @@ class Window(hints: Hints) {
             this.width = width
             this.height = height
             GL11.glViewport(0, 0, width, height)
-            sizeChangeListeners.forEach {
-                it(this)
-            }
+            sizeChangeListeners.forEach { it(this) }
         }
+
+        GLFW.glfwSetKeyCallback(id) { _, key, scancode, action, mods ->
+            keyEventListeners.forEach { it(this, key, scancode, action, mods) }
+        }
+
+        GLFW.glfwSetMouseButtonCallback(id) { _, button, action, mods ->
+            mouseButtonListeners.forEach { it(this, button, action, mods) }
+        }
+
+        GLFW.glfwSetCursorEnterCallback(id) { _, entered ->
+            cursorEnteredListeners.forEach { it(this, entered) }
+        }
+
+        GLFW.glfwSetCursorPosCallback(id) { _, xpos, ypos ->
+            cursorPosListeners.forEach { it(this, xpos, ypos) }
+        }
+
+        GLFW.glfwSetScrollCallback(id) { _, xoffset, yoffset ->
+            scrollListeners.forEach { it(this, xoffset, yoffset) }
+        }
+
+        input = Input(this)
 
         makeContextCurrent()
         GLFW.glfwSwapInterval(1)
@@ -84,14 +118,46 @@ class Window(hints: Hints) {
         GLFW.glfwPollEvents()
     }
 
-    fun addWindowSizeChangedListener(listener: (window: Window) -> Unit) {
+    fun addWindowSizeChangedListener(listener: SizeChangeListener) {
         assertWindowNotDestroyed()
         sizeChangeListeners += listener
     }
 
+    fun addKeyEventListener(listener: KeyEventListener) {
+        assertWindowNotDestroyed()
+        keyEventListeners += listener
+    }
+
+    fun addMouseButtonListener(listener: MouseButtonListener) {
+        assertWindowNotDestroyed()
+        mouseButtonListeners += listener
+    }
+
+    fun addCursorEnteredListener(listener: CursorEnteredListener) {
+        assertWindowNotDestroyed()
+        cursorEnteredListeners += listener
+    }
+
+    fun addCursorPosListener(listener: CursorPosListener) {
+        assertWindowNotDestroyed()
+        cursorPosListeners += listener
+    }
+
+    fun addScrollListener(listener: ScrollListener) {
+        assertWindowNotDestroyed()
+        scrollListeners += listener
+    }
+
     fun destroy() {
         assertWindowNotDestroyed()
+
         sizeChangeListeners.clear()
+        keyEventListeners.clear()
+        mouseButtonListeners.clear()
+        cursorEnteredListeners.clear()
+        cursorPosListeners.clear()
+        scrollListeners.clear()
+
         Callbacks.glfwFreeCallbacks(id)
         GLFW.glfwDestroyWindow(id)
 
