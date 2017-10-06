@@ -58,6 +58,12 @@ class Shader(vsCode: String, fsCode: String, gsCode: String? = null) {
         GL20.glUseProgram(0)
     }
 
+    inline fun doBound(block: (Shader)->Unit) {
+        bind()
+        block(this)
+        unbind()
+    }
+
     private val uniforms = mutableMapOf<String, Int>()
 
     fun getUniformForName(name: String): Int {

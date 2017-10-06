@@ -164,6 +164,11 @@ class Window(hints: Hints) {
         id = lNULL
     }
 
+    fun close() {
+        assertWindowNotDestroyed()
+        GLFW.glfwSetWindowShouldClose(id, true)
+    }
+
     private fun assertWindowNotDestroyed() {
         if (id == lNULL) throw IllegalStateException("This window has been destroyed: title = $")
     }
