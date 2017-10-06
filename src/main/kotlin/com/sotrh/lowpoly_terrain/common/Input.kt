@@ -10,7 +10,7 @@ class Input(val window: Window) {
     fun processInput() {
         keyboard.preProcessInput()
         mouse.preProcessInput()
-        GLFW.glfwPollEvents()
+        window.pollEvents()
     }
 
     inner class Keyboard {

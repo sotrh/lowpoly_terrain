@@ -1,17 +1,16 @@
 package com.sotrh.lowpoly_terrain
 
+import com.sotrh.lowpoly_terrain.camera.CameraController
 import com.sotrh.lowpoly_terrain.camera.Camera
 import com.sotrh.lowpoly_terrain.common.*
 import com.sotrh.lowpoly_terrain.terrain.Terrain
 import com.sotrh.lowpoly_terrain.terrain.TerrainModel
 import org.joml.Matrix4f
-import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
 
 object LowPolyTerrainDemo {
 
@@ -19,7 +18,7 @@ object LowPolyTerrainDemo {
     lateinit var terrainModel: TerrainModel
 
     lateinit var window: Window
-    lateinit var camera: Camera
+    lateinit var cameraController: CameraController
 
     fun getTime() = GLFW.glfwGetTime()
 
@@ -37,7 +36,9 @@ object LowPolyTerrainDemo {
         window = Window(Window.Hints("Low Poly Terrain", 800, 600))
 
         // create the camera
-        camera = Camera(position = Vector3f(0f, 3f, 0f), rotation = Vector3f(45f, 45f, 0f))
+        val camera = Camera()
+        camera.position.y = 2f
+        cameraController = CameraController(window.input, camera)
 
         // create the terrain
         terrain = Terrain.Builder.random(100)
@@ -46,7 +47,7 @@ object LowPolyTerrainDemo {
         window.addWindowSizeChangedListener {
             terrainModel.shader.bind()
             val ratio = window.width.toFloat() / window.height
-            val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
+            val projection = Matrix4f().perspective(45f, ratio, 0.1f, 1000f)
             terrainModel.shader.putUniform("projection", projection)
             terrainModel.shader.unbind()
         }
@@ -76,8 +77,7 @@ object LowPolyTerrainDemo {
         val model = Matrix4f()
         terrainModel.shader.putUniform("model", model)
 
-        val view = camera.getViewMatrix()
-        terrainModel.shader.putUniform("view", view)
+        terrainModel.shader.putUniform("view", cameraController.getCameraViewMatrix())
 
         val ratio = window.width.toFloat() / window.height
         val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
@@ -96,28 +96,42 @@ object LowPolyTerrainDemo {
             previous = loopStartTime
             steps += elapsed
 
+            processInput()
+
             while (steps >= secsPerUpdate) {
                 update()
                 steps -= secsPerUpdate
             }
 
             render()
+        }
+    }
 
-            window.swapBuffers()
-            window.input.processInput()
+    private fun processInput() {
+        window.input.processInput()
+
+        val keyboard = window.input.keyboard
+        if (keyboard.isKeyJustPressed(GLFW.GLFW_KEY_ESCAPE)) {
+            window.close()
+        }
+
+        cameraController.processInputThenIfCameraUpdated {
+            terrainModel.shader.doBound {
+                it.putUniform("view", cameraController.getCameraViewMatrix())
+            }
         }
     }
 
     private fun update() {
-        if (window.input.keyboard.isKeyJustPressed(GLFW.GLFW_KEY_ESCAPE)) {
-            GLFW.glfwSetWindowShouldClose(window.id, true)
-        }
+
     }
 
     private fun render() {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
 
         terrainModel.draw()
+
+        window.swapBuffers()
     }
 
     private fun destroy() {

@@ -4,36 +4,35 @@ import org.joml.Matrix4f
 import org.joml.Vector3f
 
 /**
- * Created by benjamin on 9/26/17
+ * Created by benjamin on 10/4/17
  */
-class Camera(val position: Vector3f = Vector3f(0f, 0f, 0f), val rotation: Vector3f = Vector3f(0f, 0f, 0f)) {
+class Camera {
 
-    private val viewMatrix = Matrix4f()
+    companion object {
+        val UP = Vector3f(0f, 1f, 0f).toImmutable()
+    }
+    val viewMatrix = Matrix4f()
 
-    fun movePosition(offsetX: Float, offsetY: Float, offsetZ: Float) {
-        if (offsetZ != 0f) {
-            position.x += Math.sin(Math.toRadians(rotation.y.toDouble())).toFloat() * -1.0f * offsetZ
-            position.z += Math.cos(Math.toRadians(rotation.y.toDouble())).toFloat() * offsetZ
-        }
+    val position = Vector3f()
+    var pitch = 0f
+    var yaw = 0f
 
-        if (offsetX != 0f) {
-            position.x += Math.sin(Math.toRadians(rotation.y.toDouble())).toFloat() * -1.0f * offsetX
-            position.z += Math.cos(Math.toRadians(rotation.y.toDouble())).toFloat() * offsetX
-        }
+    private val negativePosition = Vector3f()
 
-        position.y += offsetY
+    fun move(dx: Float, dy: Float, dz: Float) {
+        position.x += Math.sin(yaw.toDouble()).toFloat() * dz
+        position.z += Math.cos(yaw.toDouble()).toFloat() * -1f * dz
+
+        position.x += Math.cos(yaw.toDouble()).toFloat() * dx
+        position.z += Math.sin(yaw.toDouble()).toFloat() * dx
+
+        position.y += dy
     }
 
-    fun moveRotation(offsetX: Float, offsetY: Float, offsetZ: Float) {
-        rotation.x += offsetX
-        rotation.y += offsetY
-        rotation.z += offsetZ
-    }
-
-    fun getViewMatrix(): Matrix4f {
-        return viewMatrix.identity()
-                .rotate(Math.toRadians(rotation.x.toDouble()).toFloat(), Vector3f(1f, 0f, 0f))
-                .rotate(Math.toRadians(rotation.y.toDouble()).toFloat(), Vector3f(0f, 1f, 0f))
-                .translate(position.x, position.y, position.z)
+    fun update() {
+        viewMatrix.identity()
+                .rotate(pitch, 1f, 0f, 0f)
+                .rotate(yaw, 0f, 1f, 0f)
+                .translate(position)
     }
 }
