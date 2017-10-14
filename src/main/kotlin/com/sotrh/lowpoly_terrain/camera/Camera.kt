@@ -33,6 +33,6 @@ class Camera {
         viewMatrix.identity()
                 .rotate(pitch, 1f, 0f, 0f)
                 .rotate(yaw, 0f, 1f, 0f)
-                .translate(position)
+                .translate(-position.x, -position.y, -position.z)
     }
 }

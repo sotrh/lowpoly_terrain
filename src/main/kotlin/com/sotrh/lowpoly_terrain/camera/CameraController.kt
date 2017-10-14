@@ -56,12 +56,12 @@ class CameraController(val input: Input, val camera: Camera, var baseSpeed: Floa
 
     private fun moveForward() {
         cameraUpdated = true
-        camera.move(0f, 0f, -baseSpeed)
+        camera.move(0f, 0f, baseSpeed)
     }
 
     private fun moveBackward() {
         cameraUpdated = true
-        camera.move(0f, 0f, baseSpeed)
+        camera.move(0f, 0f, -baseSpeed)
     }
 
     private fun moveLeft() {

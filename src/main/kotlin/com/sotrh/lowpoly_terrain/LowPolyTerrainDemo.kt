@@ -47,7 +47,7 @@ object LowPolyTerrainDemo {
         window.addWindowSizeChangedListener {
             terrainModel.shader.bind()
             val ratio = window.width.toFloat() / window.height
-            val projection = Matrix4f().perspective(45f, ratio, 0.1f, 1000f)
+            val projection = Matrix4f().setPerspective(60f.toRadians(), ratio, 0.1f, 1000f)
             terrainModel.shader.putUniform("projection", projection)
             terrainModel.shader.unbind()
         }
@@ -58,7 +58,7 @@ object LowPolyTerrainDemo {
     private fun loop() {
 
         GL11.glClearColor(0.4f, 0.4f, 0.5f, 1.0f)
-        GL11.glCullFace(GL11.GL_BACK)
+        GL11.glEnable(GL11.GL_DEPTH_TEST)
 
         // bind the terrainModel
         terrainModel.vao.bind()
@@ -80,7 +80,7 @@ object LowPolyTerrainDemo {
         terrainModel.shader.putUniform("view", cameraController.getCameraViewMatrix())
 
         val ratio = window.width.toFloat() / window.height
-        val projection = Matrix4f().perspective(60f, ratio, 0.1f, 1000f)
+        val projection = Matrix4f().setPerspective(60f.toRadians(), ratio, 0.1f, 1000f)
         terrainModel.shader.putUniform("projection", projection)
 
         terrainModel.shader.unbind()
