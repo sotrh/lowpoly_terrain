@@ -37,10 +37,10 @@ class TerrainModel(private val terrain: Terrain) : Model(
                     }
 
                     // since triangles are per square, has to skip the last vertices of the mesh
-                    (0 .. terrain.size - 2).forEach { x ->
-                        (0 .. terrain.size - 2).forEach { z ->
-
-                            if (x % 2 == 0) {
+                    var index = 0
+                    (0..terrain.size - 2).forEach { x ->
+                        (0..terrain.size - 2).forEach { z ->
+                            if (index % 2 == 0) {
                                 // 1st triangle
                                 buffer.put(elementFor(x, z)) // bottom left
                                 buffer.put(elementFor(x + 1, z)) // bottom right
@@ -52,15 +52,17 @@ class TerrainModel(private val terrain: Terrain) : Model(
                                 buffer.put(elementFor(x, z)) // bottom left
                             } else {
                                 // 1st triangle
-                                buffer.put(elementFor(x + 1, z + 1)) // top right
-                                buffer.put(elementFor(x, z)) // bottom left
-                                buffer.put(elementFor(x + 1, z)) // bottom right
+                                buffer.put(elementFor(x, z + 1))
+                                buffer.put(elementFor(x, z))
+                                buffer.put(elementFor(x + 1, z + 1))
 
                                 // 2nd triangle
-                                buffer.put(elementFor(x, z + 1)) // top left
-                                buffer.put(elementFor(x, z)) // bottom left
-                                buffer.put(elementFor(x + 1, z + 1)) // top right
+                                buffer.put(elementFor(x + 1, z))
+                                buffer.put(elementFor(x + 1, z + 1))
+                                buffer.put(elementFor(x, z))
                             }
+
+                            index++
                         }
                     }
                     buffer.flip()
