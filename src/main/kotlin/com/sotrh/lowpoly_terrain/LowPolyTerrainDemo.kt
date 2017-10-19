@@ -6,6 +6,8 @@ import com.sotrh.lowpoly_terrain.common.*
 import com.sotrh.lowpoly_terrain.terrain.Terrain
 import com.sotrh.lowpoly_terrain.terrain.TerrainModel
 import org.joml.Matrix4f
+import org.joml.Vector2f
+import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.opengl.GL
@@ -37,7 +39,7 @@ object LowPolyTerrainDemo {
 
         // create the camera
         val camera = Camera()
-        camera.position.y = 2f
+        camera.position.y = 10f
         cameraController = CameraController(window.input, camera)
 
         // create the terrain
@@ -82,6 +84,10 @@ object LowPolyTerrainDemo {
         val ratio = window.width.toFloat() / window.height
         val projection = Matrix4f().setPerspective(60f.toRadians(), ratio, 0.1f, 1000f)
         terrainModel.shader.putUniform("projection", projection)
+
+        terrainModel.shader.putUniform("lightDirection", Vector3f(0f, 1f, 0f))
+        terrainModel.shader.putUniform("lightColor", Vector3f(1f, 1f, 1f))
+        terrainModel.shader.putUniform("lightBias", Vector2f(0.3f, 0.8f))
 
         terrainModel.shader.unbind()
         terrainModel.vao.unbind()

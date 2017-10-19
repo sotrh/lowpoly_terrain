@@ -1,6 +1,8 @@
 package com.sotrh.lowpoly_terrain.common
 
 import org.joml.Matrix4f
+import org.joml.Vector2f
+import org.joml.Vector3f
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
 import org.lwjgl.opengl.GL30
@@ -78,6 +80,24 @@ class Shader(vsCode: String, fsCode: String, gsCode: String? = null) {
     fun putUniform(location: Int, value: Matrix4f, transpose: Boolean = false) {
         assertBound()
         GL20.glUniformMatrix4fv(location, transpose, value.get(MATRIX_BUFFER))
+    }
+
+    fun putUniform(name: String, value: Vector2f) {
+        putUniform(getUniformForName(name), value)
+    }
+
+    fun putUniform(location: Int, value: Vector2f) {
+        assertBound()
+        GL20.glUniform2f(location, value.x, value.y)
+    }
+
+    fun putUniform(name: String, value: Vector3f) {
+        putUniform(getUniformForName(name), value)
+    }
+
+    fun putUniform(location: Int, value: Vector3f) {
+        assertBound()
+        GL20.glUniform3f(location, value.x, value.y, value.z)
     }
 
     private fun assertBound() {

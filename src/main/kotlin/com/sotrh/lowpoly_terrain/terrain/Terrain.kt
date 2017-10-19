@@ -15,14 +15,13 @@ class Terrain(val size: Int) {
 
     object Builder {
         fun random(size: Int): Terrain {
-            val random = Random()
+            val noise = PerlinNoise(3, 10f, 0.35f)
             val terrain = Terrain(size)
             (0 until size).forEach { x ->
                 (0 until size).forEach { z ->
-                    terrain.heightMap[x][z] = random.nextFloat()
+                    terrain.heightMap[x][z] = noise.getPerlinNoise(x, z) + 5f
                 }
             }
-            println("Made it past the loop")
             return terrain
         }
 
@@ -30,7 +29,7 @@ class Terrain(val size: Int) {
             val terrain = Terrain(size)
             (0 until size).forEach { x ->
                 (0 until size).forEach { z ->
-                    terrain.heightMap[x][z] = Math.sin(x.toDouble() / size * 2 * Math.PI).toFloat()
+                    terrain.heightMap[x][z] = Math.sin(x.toDouble() / size * 2 * Math.PI).toFloat() * 0.5f + 0.5f
                 }
             }
             return terrain

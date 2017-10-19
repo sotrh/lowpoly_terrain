@@ -2,18 +2,9 @@ package com.sotrh.lowpoly_terrain.terrain
 
 import com.sotrh.lowpoly_terrain.common.*
 import org.joml.Vector3f
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL15
-import org.lwjgl.opengl.GL20
-import org.lwjgl.opengl.GL30
-import org.lwjgl.system.MemoryStack
-import org.lwjgl.system.MemoryUtil
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
-import java.nio.ShortBuffer
 
 class TerrainModel(private val terrain: Terrain) : Model(
-        Shader(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER),
+        Shader(VERTEX_SHADER, FRAGMENT_SHADER, GEOMETRY_SHADER),
         VAO.Builder()
                 .triangles()
                 .vertices(terrain.size * terrain.size, FLOATS_PER_VERTEX, true) { buffer, vertexCount ->
@@ -25,12 +16,8 @@ class TerrainModel(private val terrain: Terrain) : Model(
                             buffer.put(x - terrain.size * 0.5f - 0.5f).put(height).put(z - terrain.size * 0.5f - 0.5f)
 
                             // color
-                            val colorIndex = Math.min((VERTEX_COLORS.size * height).toInt(), VERTEX_COLORS.size - 1)
+                            val colorIndex = Math.min((VERTEX_COLORS.size * height / 10f).toInt(), VERTEX_COLORS.size - 1)
                             val vertexColor = VERTEX_COLORS[colorIndex]
-
-                            println("x = $x, z = $z, height = $height")
-                            println("colorIndex = $colorIndex")
-                            println("vertexColor = $vertexColor")
 
                             buffer.put(vertexColor.x).put(vertexColor.y).put(vertexColor.z)
                         }
@@ -53,15 +40,27 @@ class TerrainModel(private val terrain: Terrain) : Model(
                     (0 .. terrain.size - 2).forEach { x ->
                         (0 .. terrain.size - 2).forEach { z ->
 
-                            // 1st triangle
-                            buffer.put(elementFor(x, z)) // bottom left
-                            buffer.put(elementFor(x + 1, z)) // bottom right
-                            buffer.put(elementFor(x + 1, z + 1)) // top right
+                            if (x % 2 == 0) {
+                                // 1st triangle
+                                buffer.put(elementFor(x, z)) // bottom left
+                                buffer.put(elementFor(x + 1, z)) // bottom right
+                                buffer.put(elementFor(x + 1, z + 1)) // top right
 
-                            // 2nd triangle
-                            buffer.put(elementFor(x + 1, z + 1)) // top right
-                            buffer.put(elementFor(x, z + 1)) // top left
-                            buffer.put(elementFor(x, z)) // bottom left
+                                // 2nd triangle
+                                buffer.put(elementFor(x + 1, z + 1)) // top right
+                                buffer.put(elementFor(x, z + 1)) // top left
+                                buffer.put(elementFor(x, z)) // bottom left
+                            } else {
+                                // 1st triangle
+                                buffer.put(elementFor(x + 1, z + 1)) // top right
+                                buffer.put(elementFor(x, z)) // bottom left
+                                buffer.put(elementFor(x + 1, z)) // bottom right
+
+                                // 2nd triangle
+                                buffer.put(elementFor(x, z + 1)) // top left
+                                buffer.put(elementFor(x, z)) // bottom left
+                                buffer.put(elementFor(x + 1, z + 1)) // top right
+                            }
                         }
                     }
                     buffer.flip()
@@ -74,6 +73,76 @@ class TerrainModel(private val terrain: Terrain) : Model(
 
         // bottom to top
         val VERTEX_COLORS = arrayOf(Vector3f(0f, 0f, 1f), Vector3f(0.5f, 0.5f, 0f), Vector3f(0f, 1f, 0f), Vector3f(1f, 1f, 1f))
+
+        val VERTEX_SHADER = """
+            #version 150
+
+            in vec3 position;
+            in vec3 color;
+
+            out vec3 vertexColor;
+
+            void main() {
+                vertexColor = color;
+                gl_Position = vec4(position, 1.0);
+            }
+        """
+
+        val GEOMETRY_SHADER = """
+            #version 330
+
+            layout(triangles) in;
+            layout(triangle_strip, max_vertices = 3) out;
+
+            in vec3 vertexColor[];
+
+            out vec3 faceColor;
+
+            uniform vec3 lightDirection;
+            uniform vec3 lightColor;
+            uniform vec2 lightBias;
+
+            uniform mat4 model;
+            uniform mat4 view;
+            uniform mat4 projection;
+
+            vec3 calculateLighting(vec3 normal) {
+                float brightness = max(dot(-lightDirection, normal), 0.0);
+                return (lightColor * lightBias.x) + (brightness * lightColor * lightBias.y);
+            }
+
+            vec3 calcTriangleNormal() {
+                vec3 tangent1 = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+                vec3 tangent2 = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+                vec3 normal = cross(tangent1, tangent2);
+                return normalize(normal);
+            }
+
+            void main(void) {
+                vec3 normal = calcTriangleNormal();
+                vec3 lighting = calculateLighting(normal);
+
+                for (int i=0; i<3; i++) {
+                    gl_Position = projection * view * model * gl_in[i].gl_Position;
+                    faceColor = vertexColor[0] * lighting;
+                    EmitVertex();
+                }
+
+                EndPrimitive();
+            }
+        """
+
+        val FRAGMENT_SHADER = """
+            #version 150 core
+
+            in vec3 faceColor;
+
+            out vec4 fragColor;
+
+            void main() {
+                fragColor = vec4(faceColor, 1.0);
+            }
+        """
     }
 
     fun destroy() {

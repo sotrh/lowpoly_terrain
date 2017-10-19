@@ -180,7 +180,7 @@ class Window(hints: Hints) {
             val centerInMonitor: Boolean = true,
             val resizable: Int = GLFW.GLFW_TRUE,
             val contextVersionMajor: Int = 3,
-            val contextVersionMinor: Int = 2,
+            val contextVersionMinor: Int = 3,
             val openGLProfile: Int = GLFW.GLFW_OPENGL_CORE_PROFILE
     )
 }
