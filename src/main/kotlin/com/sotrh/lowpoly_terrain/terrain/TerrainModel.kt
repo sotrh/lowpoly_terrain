@@ -16,8 +16,22 @@ class TerrainModel(private val terrain: Terrain) : Model(
                             buffer.put(x - terrain.size * 0.5f - 0.5f).put(height).put(z - terrain.size * 0.5f - 0.5f)
 
                             // color
-                            val colorIndex = Math.min((VERTEX_COLORS.size * height / 10f).toInt(), VERTEX_COLORS.size - 1)
-                            val vertexColor = VERTEX_COLORS[colorIndex]
+                            val colorLerp = Math.max(Math.min((VERTEX_COLORS.size - 1f) * height / 10f, VERTEX_COLORS.size - 1f), 0f)
+                            val colorIndex = colorLerp.toInt()
+                            val vertexColor = Vector3f()
+
+                            if (colorIndex <= 0) vertexColor.set(VERTEX_COLORS[0])
+                            else if (colorIndex >= VERTEX_COLORS.size - 1) vertexColor.set(VERTEX_COLORS[VERTEX_COLORS.size - 1])
+                            else {
+                                val a = VERTEX_COLORS[colorIndex]
+                                val b = VERTEX_COLORS[colorIndex + 1]
+                                val lerp = colorLerp - colorIndex
+                                vertexColor.set(
+                                        a.x * (1 - lerp) + b.x * lerp,
+                                        a.y * (1 - lerp) + b.y * lerp,
+                                        a.z * (1 - lerp) + b.z * lerp
+                                )
+                            }
 
                             buffer.put(vertexColor.x).put(vertexColor.y).put(vertexColor.z)
                         }
@@ -42,16 +56,6 @@ class TerrainModel(private val terrain: Terrain) : Model(
                         (0..terrain.size - 2).forEach { z ->
                             if (index % 2 == 0) {
                                 // 1st triangle
-                                buffer.put(elementFor(x, z)) // bottom left
-                                buffer.put(elementFor(x + 1, z)) // bottom right
-                                buffer.put(elementFor(x + 1, z + 1)) // top right
-
-                                // 2nd triangle
-                                buffer.put(elementFor(x + 1, z + 1)) // top right
-                                buffer.put(elementFor(x, z + 1)) // top left
-                                buffer.put(elementFor(x, z)) // bottom left
-                            } else {
-                                // 1st triangle
                                 buffer.put(elementFor(x, z + 1))
                                 buffer.put(elementFor(x, z))
                                 buffer.put(elementFor(x + 1, z + 1))
@@ -60,6 +64,16 @@ class TerrainModel(private val terrain: Terrain) : Model(
                                 buffer.put(elementFor(x + 1, z))
                                 buffer.put(elementFor(x + 1, z + 1))
                                 buffer.put(elementFor(x, z))
+                            } else {
+                                // 1st triangle
+                                buffer.put(elementFor(x, z))
+                                buffer.put(elementFor(x + 1, z))
+                                buffer.put(elementFor(x, z + 1))
+
+                                // 2nd triangle
+                                buffer.put(elementFor(x + 1, z + 1))
+                                buffer.put(elementFor(x, z + 1))
+                                buffer.put(elementFor(x + 1, z))
                             }
 
                             index++
